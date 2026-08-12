@@ -72,3 +72,5 @@ Designing an event-driven pipeline where an S3 upload fans out through Lambda, S
 Structuring Blazor Server auth state around a custom AuthenticationStateProvider backed by Cognito.
 Keeping AWS secrets out of source control from day one rather than retrofitting it.
 Using CloudWatch to trace a request end-to-end across API Gateway and multiple Lambda fu
+
+Test push - checking sync
