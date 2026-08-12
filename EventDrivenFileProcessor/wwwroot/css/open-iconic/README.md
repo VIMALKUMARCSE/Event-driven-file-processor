@@ -1,114 +1,74 @@
-[Open Iconic v1.1.1](https://github.com/iconic/open-iconic)
-===========
+Event-Driven File Processor
 
-### Open Iconic is the open source sibling of [Iconic](https://github.com/iconic/open-iconic). It is a hyper-legible collection of 223 icons with a tiny footprint&mdash;ready to use with Bootstrap and Foundation. [View the collection](https://github.com/iconic/open-iconic)
+A Blazor Server web application that lets authenticated users upload and delete files via AWS S3, with an event-driven backend on AWS that processes files, tracks their status in DynamoDB, sends notifications, and is fully monitored through CloudWatch.
 
+Overview
 
+Users log in through AWS Cognito and interact with a Blazor Server dashboard to upload and manage files. File uploads land in S3, which triggers an event-driven backend pipeline (Lambda, SNS, SQS) that processes the file, updates its status in DynamoDB, and sends notifications. A REST API built with API Gateway + Lambda exposes POST and DELETE endpoints for file operations. CloudWatch provides logging and monitoring across the pipeline.
 
-## What's in Open Iconic?
+Architecture
+Browser (Blazor Server UI)
+        |
+        v
+  Blazor Server App -----------> Amazon Cognito   (authentication)
+        |
+        v
+  Amazon API Gateway
+     POST /files    -----> AWS Lambda -----> Amazon S3       (upload)
+     DELETE /files  -----> AWS Lambda -----> Amazon S3       (delete)
+        |
+        v (S3 event trigger on upload)
+  AWS Lambda (file processing)
+        |
+        +--> Amazon SNS         (notifications)
+        +--> Amazon SQS         (queued processing)
+        +--> Amazon DynamoDB    (file history / status)
+        |
+        v
+  Amazon CloudWatch (logs, metrics, monitoring across all Lambda functions)
+AWS Services Used
+Amazon Cognito — user authentication (login, forgot password)
+Amazon API Gateway — REST endpoints (POST to upload, DELETE to remove a file)
+AWS Lambda — handles API Gateway requests and processes S3 upload events
+Amazon S3 — file storage
+Amazon SNS — notifications on file events
+Amazon SQS — queues processing tasks between components
+Amazon DynamoDB — file history and status tracking
+Amazon CloudWatch — logging and monitoring for Lambda executions and API Gateway
+IAM — scoped permissions between services (no hard-coded credentials)
+Tech Stack
 
-* 223 icons designed to be legible down to 8 pixels
-* Super-light SVG files - 61.8 for the entire set
-* SVG sprite&mdash;the modern replacement for icon fonts
-* Webfont (EOT, OTF, SVG, TTF, WOFF), PNG and WebP formats
-* Webfont stylesheets (including versions for Bootstrap and Foundation) in CSS, LESS, SCSS and Stylus formats
-* PNG and WebP raster images in 8px, 16px, 24px, 32px, 48px and 64px.
+C# / .NET 8, Blazor Server, MudBlazor, AWS SDK for .NET (S3, DynamoDB, CognitoIdentityProvider), AWS Lambda, API Gateway
 
+API Endpoints
+Method	Endpoint	Purpose
+POST	/files	Upload a new file, triggers processing pipeline
+DELETE	/files/{id}	Delete a file from S3 and remove its history record
+Project Structure
+EventDrivenFileProcessor/
+├── Pages/              # Login, ForgotPassword, FileDashboard, FileHistoryDashboard
+├── Services/           # S3Service, FileHistoryService, CognitoAuthService, CustomAuthenticationStateProvider
+├── Models/             # CognitoSettings, FileHistory, FileRecord
+├── Shared/              # Layout, NavMenu
+├── lambda/              # (add if you export your Lambda function code)
+├── Program.cs
+└── appsettings.json     # kept out of source control — see appsettings.Example.json
+Authentication & Security
+Users authenticate against an AWS Cognito User Pool.
+No AWS credentials are hard-coded — services use IAM roles/policies scoped to what each component needs (S3 read/write, DynamoDB read/write, SNS publish, SQS send/receive).
+Real config values (bucket name, pool ID, client secret) are excluded from source control; use appsettings.Example.json as the template.
+Monitoring
 
-## Getting Started
+CloudWatch is used to track Lambda invocations, errors, and duration across the processing pipeline, along with API Gateway request logs — giving visibility into the full upload-to-processing flow.
 
-#### For code samples and everything else you need to get started with Open Iconic, check out our [Icons](https://github.com/iconic/open-iconic) and [Reference](https://github.com/iconic/open-iconic) sections.
-
-### General Usage
-
-#### Using Open Iconic's SVGs
-
-We like SVGs and we think they're the way to display icons on the web. Since Open Iconic are just basic SVGs, we suggest you display them like you would any other image (don't forget the `alt` attribute).
-
-```
-<img src="/open-iconic/svg/icon-name.svg" alt="icon name">
-```
-
-#### Using Open Iconic's SVG Sprite
-
-Open Iconic also comes in a SVG sprite which allows you to display all the icons in the set with a single request. It's like an icon font, without being a hack.
-
-Adding an icon from an SVG sprite is a little different than what you're used to, but it's still a piece of cake. *Tip: To make your icons easily style able, we suggest adding a general class to the* `<svg>` *tag and a unique class name for each different icon in the* `<use>` *tag.*
-
-```
-<svg class="icon">
-  <use xlink:href="open-iconic.svg#account-login" class="icon-account-login"></use>
-</svg>
-```
-
-Sizing icons only needs basic CSS. All the icons are in a square format, so just set the `<svg>` tag with equal width and height dimensions.
-
-```
-.icon {
-  width: 16px;
-  height: 16px;
-}
-```
-
-Coloring icons is even easier. All you need to do is set the `fill` rule on the `<use>` tag.
-
-```
-.icon-account-login {
-  fill: #f00;
-}
-```
-
-To learn more about SVG Sprites, read [Chris Coyier's guide](http://css-tricks.com/svg-sprites-use-better-icon-fonts/).
-
-#### Using Open Iconic's Icon Font...
-
-
-##### …with Bootstrap
-
-You can find our Bootstrap stylesheets in `font/css/open-iconic-bootstrap.{css, less, scss, styl}`
-
-
-```
-<link href="/open-iconic/font/css/open-iconic-bootstrap.css" rel="stylesheet">
-```
-
-
-```
-<span class="oi oi-icon-name" title="icon name" aria-hidden="true"></span>
-```
-
-##### …with Foundation
-
-You can find our Foundation stylesheets in `font/css/open-iconic-foundation.{css, less, scss, styl}`
-
-```
-<link href="/open-iconic/font/css/open-iconic-foundation.css" rel="stylesheet">
-```
-
-
-```
-<span class="fi-icon-name" title="icon name" aria-hidden="true"></span>
-```
-
-##### …on its own
-
-You can find our default stylesheets in `font/css/open-iconic.{css, less, scss, styl}`
-
-```
-<link href="/open-iconic/font/css/open-iconic.css" rel="stylesheet">
-```
-
-```
-<span class="oi" data-glyph="icon-name" title="icon name" aria-hidden="true"></span>
-```
-
-
-## License
-
-### Icons
-
-All code (including SVG markup) is under the [MIT License](http://opensource.org/licenses/MIT).
-
-### Fonts
-
-All fonts are under the [SIL Licensed](http://scripts.sil.org/cms/scripts/page.php?item_id=OFL_web).
+Deployment
+Clone the repo.
+Copy appsettings.Example.json → appsettings.json and fill in your own AWS values.
+Deploy the Lambda functions and API Gateway routes (POST /files, DELETE /files/{id}) separately in AWS, or via IaC if you add one.
+Ensure your AWS credentials (IAM role with S3, DynamoDB, SNS, SQS, and CloudWatch permissions) are available to the app.
+dotnet restore && dotnet run
+Lessons Learned
+Designing an event-driven pipeline where an S3 upload fans out through Lambda, SNS, and SQS rather than doing everything synchronously in the web app.
+Structuring Blazor Server auth state around a custom AuthenticationStateProvider backed by Cognito.
+Keeping AWS secrets out of source control from day one rather than retrofitting it.
+Using CloudWatch to trace a request end-to-end across API Gateway and multiple Lambda fu
