@@ -74,3 +74,12 @@ Keeping AWS secrets out of source control from day one rather than retrofitting 
 Using CloudWatch to trace a request end-to-end across API Gateway and multiple Lambda fu
 
 Test push - checking sync
+
+Event-Driven File Processor | GitHub : https://github.com/VIMALKUMARCSE/Event-driven-file-processor
+C#, .NET 8, Blazor Server, MudBlazor, AWS Lambda, API Gateway, S3, Cognito, DynamoDB, SNS, SQS, CloudWatch, IAM
+
+Developed a Blazor Server web app with AWS Cognito authentication, implementing secure login and password-recovery flows.
+Designed and deployed a REST API using Amazon API Gateway and AWS Lambda to handle file upload and delete operations.
+Architected an event-driven processing pipeline where S3 upload events trigger Lambda functions, using SNS for notifications and SQS for decoupled, queued processing.
+Built a DynamoDB-backed data layer to track file status and history, supporting efficient lookups and real-time updates.
+Implemented monitoring with Amazon CloudWatch across Lambda and API Gateway, and enforced IAM least-privilege access instead of hard-coded credentials.
