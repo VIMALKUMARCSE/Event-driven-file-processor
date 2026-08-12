@@ -1,0 +1,11 @@
+﻿@inject NavigationManager Navigation
+@inject AuthenticationStateProvider AuthStateProvider
+
+@code {
+    protected override void OnInitialized()
+    {
+        Console.WriteLine("LOGIN REDIRECT");
+
+        Navigation.NavigateTo("/login");
+    }
+}

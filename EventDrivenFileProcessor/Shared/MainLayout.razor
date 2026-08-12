@@ -1,0 +1,76 @@
+﻿@inherits LayoutComponentBase
+@using Microsoft.AspNetCore.Components.Authorization
+@inject NavigationManager Navigation
+@using EventDrivenFileProcessor.Services
+@inject CustomAuthenticationStateProvider AuthProvider
+@inject Blazored.LocalStorage.ILocalStorageService LocalStorage
+
+<PageTitle>Event Driven File Processor</PageTitle>
+
+<MudThemeProvider />
+<MudPopoverProvider />
+<MudDialogProvider />
+<MudSnackbarProvider />
+
+<div class="page">
+
+    <AuthorizeView>
+
+        <Authorized>
+
+            <div class="sidebar">
+                <NavMenu />
+            </div>
+
+            <main>
+
+                <div class="top-row px-4 d-flex justify-space-between align-center">
+
+                    <MudText Typo="Typo.h6">
+                        Event Driven File Processor
+                    </MudText>
+
+                    <MudButton Color="Color.Error"
+                               Variant="Variant.Filled"
+                               OnClick="Logout">
+                        Logout
+                    </MudButton>
+
+                </div>
+
+                <article class="content px-4">
+                    @Body
+                </article>
+
+            </main>
+
+        </Authorized>
+
+        <NotAuthorized>
+
+            <main>
+                <article class="content px-4">
+                    @Body
+                </article>
+            </main>
+
+        </NotAuthorized>
+
+    </AuthorizeView>
+
+</div>
+
+@code
+{
+    protected override async Task OnInitializedAsync()
+    {
+        Console.WriteLine("MAIN LAYOUT LOADED");
+    }
+
+    private async Task Logout()
+    {
+        AuthProvider.MarkUserAsLoggedOut();
+
+        Navigation.NavigateTo("/login", true);
+    }
+}

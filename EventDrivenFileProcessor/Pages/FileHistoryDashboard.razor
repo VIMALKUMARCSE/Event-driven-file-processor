@@ -1,0 +1,31 @@
+﻿@page "/filehistory"
+@inject Services.FileHistoryService FileHistoryService
+@attribute [Authorize]
+
+<MudTable Items="files">
+
+    <HeaderContent>
+        <MudTh>File Name</MudTh>
+        <MudTh>User</MudTh>
+        <MudTh>Date</MudTh>
+        <MudTh>Status</MudTh>
+    </HeaderContent>
+
+    <RowTemplate>
+        <MudTd>@context.FileName</MudTd>
+        <MudTd>@context.UserEmail</MudTd>
+        <MudTd>@context.UploadDate</MudTd>
+        <MudTd>@context.Status</MudTd>
+    </RowTemplate>
+
+</MudTable>
+
+@code{
+
+private List<Models.FileHistory> files = new();
+
+protected override async Task OnInitializedAsync()
+{
+    files = await FileHistoryService.GetAllAsync();
+}
+}

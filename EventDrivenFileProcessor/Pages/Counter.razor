@@ -1,0 +1,175 @@
+﻿@page "/loginCont"
+
+<PageTitle>Login</PageTitle>
+
+<div style="min-height:100vh; background: linear-gradient(135deg, #1a6bbf 0%, #0d3f73 50%, #061f3a 100%); display:flex; align-items:center; justify-content:center; padding: 1rem;">
+
+    <MudPaper Elevation="6" Style="border-radius:16px; overflow:hidden; width:100%; max-width:400px;">
+
+        <div style="background: linear-gradient(135deg, #185FA5, #1976d2); padding: 1.25rem 1.5rem; display:flex; align-items:center; gap:12px;">
+            <MudPaper Elevation="0"
+                      Style="width:40px; height:40px; border-radius:10px; background:rgba(255,255,255,0.18); display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+                <MudIcon Icon="@Icons.Material.Filled.Lock" Style="color:white; font-size:20px;" />
+            </MudPaper>
+            <div>
+                <MudText Style="color:rgba(255,255,255,0.65); font-size:11px; letter-spacing:0.08em; text-transform:uppercase; font-weight:500; line-height:1; margin-bottom:2px;">
+                    Welcome back
+                </MudText>
+                <MudText Typo="Typo.h6" Style="color:white; font-weight:600; line-height:1.2; font-size:16px;">
+                    Sign in to your account
+                </MudText>
+            </div>
+        </div>
+
+        <MudPaper Elevation="0" Style="padding: 1.25rem 1.5rem;">
+
+            <MudTextField T="string"
+                          Label="Email address"
+                          @bind-Value="Email"
+                          Placeholder="you@example.com"
+                          Variant="Variant.Outlined"
+                          Adornment="Adornment.Start"
+                          AdornmentIcon="@Icons.Material.Filled.Mail"
+                          InputType="InputType.Email"
+                          Margin="Margin.Dense"
+                          Class="mb-3"
+                          FullWidth="true" />
+
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:2px;">
+                <MudText Typo="Typo.caption" Style="font-weight:500; color:var(--mud-palette-text-secondary);">Password</MudText>
+                <MudLink Href="/forgot-password" Typo="Typo.caption" Color="Color.Primary">Forgot password?</MudLink>
+            </div>
+            <MudTextField T="string"
+                          @bind-Value="Password"
+                          Placeholder="Enter your password"
+                          Variant="Variant.Outlined"
+                          InputType="@(_showPassword ? InputType.Text : InputType.Password)"
+                          Adornment="Adornment.End"
+                          AdornmentIcon="@(_showPassword ? Icons.Material.Filled.VisibilityOff : Icons.Material.Filled.Visibility)"
+                          OnAdornmentClick="TogglePasswordVisibility"
+                          Margin="Margin.Dense"
+                          Class="mb-2"
+                          FullWidth="true" />
+
+            <MudCheckBox T="bool"
+                         @bind-Checked="RememberMe"
+                         Color="Color.Primary"
+                         Dense="true"
+                         Class="mb-3">
+                <MudText Typo="Typo.caption">Remember me for 30 days</MudText>
+            </MudCheckBox>
+
+            <MudButton Variant="Variant.Filled"
+                       Color="Color.Primary"
+                       FullWidth="true"
+                       StartIcon="@Icons.Material.Filled.Login"
+                       OnClick="LoginUser"
+                       Style="border-radius:8px; font-weight:600;">
+                Sign in
+            </MudButton>
+
+            @if (!string.IsNullOrEmpty(Message))
+            {
+                <MudAlert Severity="@MessageSeverity" Class="mt-2" Dense="true">
+                    @Message
+                </MudAlert>
+            }
+
+            <div style="display:flex; align-items:center; gap:10px; margin: 0.85rem 0;">
+                <MudDivider Style="flex:1;" />
+                <MudText Typo="Typo.caption" Color="Color.Secondary">or continue with</MudText>
+                <MudDivider Style="flex:1;" />
+            </div>
+
+            <MudGrid Spacing="2">
+                <MudItem xs="6">
+                    <MudButton Variant="Variant.Outlined"
+                               FullWidth="true"
+                               Style="border-radius:8px; text-transform:none; font-size:13px;"
+                               OnClick="LoginWithGoogle">
+                        <img src="https://www.svgrepo.com/show/475656/google-color.svg"
+                             width="16" height="16" style="margin-right:6px;" alt="Google" />
+                        Google
+                    </MudButton>
+                </MudItem>
+                <MudItem xs="6">
+                    <MudButton Variant="Variant.Outlined"
+                               FullWidth="true"
+                               StartIcon="@Icons.Custom.Brands.GitHub"
+                               Style="border-radius:8px; text-transform:none; font-size:13px;"
+                               OnClick="LoginWithGitHub">
+                        GitHub
+                    </MudButton>
+                </MudItem>
+            </MudGrid>
+
+        </MudPaper>
+
+        <MudPaper Elevation="0"
+                  Style="background:var(--mud-palette-background-grey); border-top:1px solid var(--mud-palette-divider); padding:0.65rem 1.5rem; display:flex; justify-content:center; gap:6px; align-items:center;">
+            <MudText Typo="Typo.caption" Color="Color.Secondary">Don't have an account?</MudText>
+            <MudLink Href="/register" Typo="Typo.caption" Color="Color.Primary">
+                <strong>Create one</strong>
+            </MudLink>
+        </MudPaper>
+
+
+        @if (ShowNewPasswordForm)
+        {
+            <MudPaper Elevation="0" Style="border-top:1px solid var(--mud-palette-divider); padding:1rem 1.5rem;">
+                <div style="display:flex; align-items:center; gap:8px; margin-bottom:0.75rem;">
+                    <MudAvatar Color="Color.Success" Size="Size.Small">
+                        <MudIcon Icon="@Icons.Material.Filled.Lock" Size="Size.Small" />
+                    </MudAvatar>
+                    <MudText Typo="Typo.body2" Style="font-weight:500;">Set a new password</MudText>
+                </div>
+                <MudTextField T="string"
+                              Label="New password"
+                              @bind-Value="NewPassword"
+                              InputType="InputType.Password"
+                              Variant="Variant.Outlined"
+                              Adornment="Adornment.Start"
+                              AdornmentIcon="@Icons.Material.Filled.Lock"
+                              Margin="Margin.Dense"
+                              FullWidth="true"
+                              Class="mb-3" />
+                <MudButton Variant="Variant.Filled"
+                           Color="Color.Success"
+                           StartIcon="@Icons.Material.Filled.Check"
+                           OnClick="ChangePassword"
+                           Style="border-radius:8px;">
+                    Update password
+                </MudButton>
+            </MudPaper>
+        }
+
+    </MudPaper>
+</div>
+
+@code {
+    private string Email = string.Empty;
+    private string Password = string.Empty;
+    private string NewPassword = string.Empty;
+    private bool _showPassword = false;
+    private bool RememberMe = false;
+    private bool ShowNewPasswordForm = false;
+    private string Message = string.Empty;
+    private Severity MessageSeverity = Severity.Info;
+
+    private void TogglePasswordVisibility() => _showPassword = !_showPassword;
+
+    private async Task LoginUser()
+    {
+        // TODO: your auth logic
+    }
+
+    private async Task ChangePassword()
+    {
+        Message = "Password updated successfully.";
+        MessageSeverity = Severity.Success;
+        ShowNewPasswordForm = false;
+    }
+
+    private void LoginWithGoogle() { /* TODO */ }
+    private void LoginWithGitHub() { /* TODO */ }
+}

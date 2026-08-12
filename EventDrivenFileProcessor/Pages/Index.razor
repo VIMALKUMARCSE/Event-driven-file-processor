@@ -1,0 +1,14 @@
+﻿@page "/"
+
+@inject NavigationManager Navigation
+
+@code {
+    protected override void OnAfterRender(bool firstRender)
+    {
+        if (firstRender)
+        {
+            Console.WriteLine("INDEX REDIRECT");
+            Navigation.NavigateTo("/login");
+        }
+    }
+}

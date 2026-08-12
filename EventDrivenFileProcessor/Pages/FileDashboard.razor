@@ -1,0 +1,206 @@
+﻿@page "/file-dashboard"
+@using System.Net.Http.Json
+@using EventDrivenFileProcessor.Models
+@inject HttpClient Http
+@using Microsoft.AspNetCore.Components.Forms
+@inject Services.S3Service S3Service
+@inject ISnackbar Snackbar
+@using Microsoft.AspNetCore.Authorization
+@* @attribute [Authorize] *@
+@inject Services.FileHistoryService _fileHistoryService
+
+<MudText Typo="Typo.h4" Class="mb-4">
+    File Processing Dashboard
+</MudText>
+
+<div class="row">
+    <div class="col-md-4">
+        <MudFileUpload T="IBrowserFile"
+                       FilesChanged="UploadFile">
+            <MudButton Variant="Variant.Filled"
+                       Color="Color.Primary">
+                Upload File
+            </MudButton>
+        </MudFileUpload>
+    </div>
+
+    <div class="col-md-4">
+        <MudTextField Variant="Variant.Outlined" @bind-Value="searchString"
+                      Placeholder="Search file..."
+                      Adornment="Adornment.Start"
+                      AdornmentIcon="@Icons.Material.Filled.Search"
+                      Immediate="true"
+                      Class="mb-4" />
+    </div>
+    <div class="col-md-4">
+        <MudButton Variant="Variant.Filled"
+                   Color="Color.Secondary"
+                   OnClick="LoadRecords">
+            Refresh
+        </MudButton>
+    </div>
+</div>
+
+@if (isLoading)
+{
+    <MudProgressCircular Indeterminate="true"
+                         Color="Color.Primary" />
+}
+else
+{
+
+    <MudTable Items="FilteredRecords" Hover="true" Striped="true" Bordered="true">
+
+        <HeaderContent>
+            <MudTh>File Name</MudTh>
+            <MudTh>Status</MudTh>
+            <MudTh>Actions</MudTh>
+        </HeaderContent>
+
+        <RowTemplate>
+            <MudTd>@context.FileName</MudTd>
+            <MudTd>
+
+                <MudChip T="string" Color="@(context.Status == "Processed"
+        ? Color.Success
+        : Color.Error)">
+                    @context.Status
+                </MudChip>
+
+            </MudTd>
+            <MudTd>
+
+                <MudButton Variant="Variant.Filled"
+                           Color="Color.Error"
+                           Size="Size.Small"
+                           OnClick="() => DeleteFile(context.FileName)">
+
+                    Delete
+
+                </MudButton>
+
+            </MudTd>
+        </RowTemplate>
+
+    </MudTable>
+}
+
+@code {
+
+    private List<FileRecord> records = new();
+    private string searchString = "";
+    private IEnumerable<FileRecord> FilteredRecords =>
+    records.Where(x =>
+        string.IsNullOrWhiteSpace(searchString)
+        || x.FileName.Contains(
+            searchString,
+            StringComparison.OrdinalIgnoreCase
+        ));
+    private bool isLoading;
+
+    protected override void OnInitialized()
+    {
+        Console.WriteLine(
+            $"DASHBOARD LOADED {DateTime.Now:HH:mm:ss.fff}");
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+
+            await LoadRecords();
+
+            StateHasChanged();
+        }
+    }
+
+    private async Task UploadFile(IBrowserFile file)
+    {
+        try
+        {
+            if (file == null)
+                return;
+
+            using var stream = file.OpenReadStream(
+                maxAllowedSize: 5 * 1024 * 1024);
+
+            await S3Service.UploadFileAsync(
+                stream,
+                file.Name);
+
+            // Save upload history
+            await _fileHistoryService.SaveAsync(
+                new FileHistory
+                {
+                    FileId = Guid.NewGuid().ToString(),
+                    FileName = file.Name,
+                    UserEmail = "admin@test.com",
+                    UploadDate = DateTime.UtcNow,
+                    Status = "Uploaded",
+                    S3Key = file.Name
+                });
+
+            Snackbar.Add(
+                "File uploaded successfully!",
+                Severity.Success);
+
+                await LoadRecords();
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add(
+                ex.Message,
+                Severity.Error);
+
+            Console.WriteLine(ex.ToString());
+        }
+    }
+
+    private async Task LoadRecords()
+    {
+        isLoading = true;
+
+        records = await Http.GetFromJsonAsync<List<FileRecord>>(
+            "https://3kqj0sfami.execute-api.ap-south-1.amazonaws.com/Dev/files"
+        ) ?? new();
+        isLoading = false;
+
+    }
+
+    private async Task DeleteFile(string fileName)
+{
+    try
+    {
+        var actualFileName = fileName.Replace("uploads/", "");
+
+        var response = await Http.DeleteAsync(
+            $"https://3kqj0sfami.execute-api.ap-south-1.amazonaws.com/DeleteDev/files/{actualFileName}"
+        );
+
+        if (response.IsSuccessStatusCode)
+        {
+            Snackbar.Add(
+                "File deleted successfully!",
+                Severity.Success
+            );
+
+            await LoadRecords();
+        }
+        else
+        {
+            Snackbar.Add(
+                "Delete failed!",
+                Severity.Error
+            );
+        }
+    }
+    catch (Exception ex)
+    {
+        Snackbar.Add(
+            ex.Message,
+            Severity.Error
+        );
+    }
+}
+}
